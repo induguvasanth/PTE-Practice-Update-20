@@ -47,9 +47,9 @@ button,input,textarea,select{font:inherit}button{cursor:pointer}.top{height:86px
 <body>
 <header class="top"><div class="brand"><div class="logo">P</div><span>Full Mock Test</span></div><button class="back" onclick="location.href='index.html'">← Dashboard</button></header>
 <main class="page">
-<section class="hero"><div class="heroRow"><div><h1 id="mockTitle">📝 PTE Mock Test</h1><p>Random questions from existing topic sheets, with visible preparation and attempt timers, automatic next question, and live practice averages.</p></div><div class="heroStats"><div class="heroStat"><b id="heroQuestions">—</b><small>questions</small></div><div class="heroStat"><b id="mockDuration">—</b><small>exam time</small></div><div class="heroStat"><b>Random</b><small>question set</small></div></div></div></section>
+<section class="hero"><div class="heroRow"><div><h1 id="mockTitle">📝 PTE Mock Test</h1><p>Timed questions · Auto-next · Live scores</p></div><div class="heroStats"><div class="heroStat"><b id="heroQuestions">—</b><small>questions</small></div><div class="heroStat"><b id="mockDuration">—</b><small>exam time</small></div><div class="heroStat"><b>Random</b><small>question set</small></div></div></div></section>
 
-<section id="startScreen" class="card practice"><div class="statusLine"><div><div class="eyebrow">FINAL PRACTICE MODE</div><div class="taskTitle">Ready to start your full mock?</div><div class="meta">Each attempt receives a stable random set. Speaking tasks use microphone controls instead of typing.</div></div><span class="pill">Ready</span></div><div class="hint">The timer starts only after you begin. Templates, solutions, transcripts and reference material are available during the test and in final review. Scores update while answering.</div><button id="startMock" class="btn primary" disabled>Loading Questions...</button></section>
+<section id="startScreen" class="card practice"><div class="statusLine"><div><div class="eyebrow">MOCK TEST</div><div class="taskTitle">Ready to start your full mock?</div><div class="meta">Each attempt receives a stable random set. Speaking tasks use microphone controls instead of typing.</div></div><span class="pill">Ready</span></div><div class="hint">Question support appears only when material is available.</div><button id="startMock" class="btn primary" disabled>Loading Questions...</button></section>
 
 <div id="testArea" class="layout hidden">
 <section class="card practice">
@@ -57,19 +57,19 @@ button,input,textarea,select{font:inherit}button{cursor:pointer}.top{height:86px
 <div class="statusLine"><div><div id="sectionEyebrow" class="eyebrow">SECTION</div><div id="taskTitle" class="taskTitle">Loading...</div><div id="taskMeta" class="meta"></div></div><span id="sectionPill" class="pill">Practice</span></div>
 <div id="questionLabel" class="questionLabel">QUESTION</div><div id="questionClock" class="pill" style="display:inline-block;margin:12px 0">Preparation / Answering</div>
 <div id="questionPrompt" class="prompt"></div>
-<div id="hint" class="hint"></div>
+
 <div id="answerArea"></div>
-<div id="liveScoreInline" class="liveScoreInline" style="display:flex"><strong>Live Practice Score</strong><span id="liveScoreText">Answer the task to calculate your practice score.</span><span id="liveQuestionBadge" class="scoreBadge">—</span></div>
+<div id="liveScoreInline" class="liveScoreInline" style="display:flex"><strong>Live Practice Score</strong><span id="liveScoreText">Answer to see your score.</span><span id="liveQuestionBadge" class="scoreBadge">—</span></div>
 <div id="solution" class="solution"></div>
 <div class="controls"><button id="prevBtn" class="btn">← Previous</button><div class="jump"><label for="jumpInput">Question</label><input id="jumpInput" type="number" min="1" inputmode="numeric"><button id="jumpGo" class="btn">Go</button></div><button id="nextBtn" class="btn">Next →</button><button id="flagBtn" class="btn">⚑ Flag</button><button id="finishBtn" class="btn primary">Finish & Review</button></div>
 <div class="progressWrap"><div class="progressText"><span id="progressLeft">Question</span><span id="answeredText">0 answered</span></div><div class="bar"><div id="progressFill" class="fill"></div></div></div>
 </section>
-<aside class="card side"><h3>Exam controls</h3><div id="timer" class="timer">2:00:00</div><div id="timerState" class="meta">Ready</div><div class="sideActions"><button id="pauseBtn" class="btn" style="display:none">Pause</button><button id="endBtn" class="btn primary">Finish Test</button></div><div class="liveScoreCard"><div class="liveScoreHead"><b>Live Practice Score</b><span id="liveScoreMode" class="pill">Estimated</span></div><div id="liveOverallScore" class="liveScoreValue">0 / 0</div><div id="liveOverallSub" class="scoreSub">Score updates as you answer.</div><div class="scoreRows"><div class="scoreRow"><span>Overall auto-graded average</span><b id="liveAverageScore">—</b></div><div class="scoreRow"><span>Section average</span><b id="liveSectionAverage">—</b></div><div class="scoreRow"><span>Topic average</span><b id="liveTopicAverage">—</b></div><div class="scoreRow"><span>Current section</span><b id="liveSectionScore">0 / 0</b></div><div class="scoreRow"><span>Answered</span><b id="liveAnswered">0</b></div><div class="scoreRow"><span>Current question</span><b id="liveQuestionScore">—</b></div></div></div><div id="sectionList" class="sectionList"></div><div class="hint" style="margin-top:16px">Practice scoring is live. Objective tasks are graded from available answer keys; open speaking and writing responses remain pending for evaluation.</div></aside>
+<aside class="card side"><h3>Exam controls</h3><div id="timer" class="timer">2:00:00</div><div id="timerState" class="meta">Ready</div><div class="sideActions"><button id="pauseBtn" class="btn" style="display:none">Pause</button><button id="endBtn" class="btn primary">Finish Test</button></div><div class="liveScoreCard"><div class="liveScoreHead"><b>Live Practice Score</b><span id="liveScoreMode" class="pill">Estimated</span></div><div id="liveOverallScore" class="liveScoreValue">0 / 0</div><div id="liveOverallSub" class="scoreSub">Score updates as you answer.</div><div class="scoreRows"><div class="scoreRow"><span>Overall auto-graded average</span><b id="liveAverageScore">—</b></div><div class="scoreRow"><span>Section average</span><b id="liveSectionAverage">—</b></div><div class="scoreRow"><span>Topic average</span><b id="liveTopicAverage">—</b></div><div class="scoreRow"><span>Current section</span><b id="liveSectionScore">0 / 0</b></div><div class="scoreRow"><span>Answered</span><b id="liveAnswered">0</b></div><div class="scoreRow"><span>Current question</span><b id="liveQuestionScore">—</b></div></div></div><div id="sectionList" class="sectionList"></div><div class="hint" style="margin-top:16px">Auto-graded scores only; open responses need evaluation.</div></aside>
 </div>
 
 <section id="sectionComplete" class="card sectionComplete"><div class="eyebrow">SECTION COMPLETE</div><h2 id="sectionCompleteTitle">Section complete</h2><div id="sectionCompleteMeta" class="meta">Review your practice score before continuing.</div><div class="sectionScoreGrid"><div class="sectionScoreStat"><span>Section marks</span><b id="sectionCompleteScore">0 / 0</b></div><div class="sectionScoreStat"><span>Answered</span><b id="sectionCompleteAnswered">0 / 0</b></div><div class="sectionScoreStat"><span>Accuracy / estimate</span><b id="sectionCompleteAccuracy">—</b></div><div class="sectionScoreStat"><span>Overall marks</span><b id="sectionCompleteOverall">0 / 0</b></div></div><div id="sectionReviewList" class="sectionReviewList"></div><div class="controls"><button id="continueSectionBtn" class="btn primary">Continue to Next Section →</button><button id="sectionBackBtn" class="btn">← Back to Section</button></div></section>
 
-<section id="summary" class="card summary"><div class="eyebrow">FINAL REVIEW</div><div class="taskTitle">Mock test complete</div><div class="summaryGrid"><div class="stat"><span>Questions</span><b id="sumQuestions">—</b></div><div class="stat"><span>Answered</span><b id="sumAnswered">—</b></div><div class="stat"><span>Objective accuracy</span><b id="sumAccuracy">—</b></div><div class="stat"><span>Time used</span><b id="sumTime">—</b></div><div class="stat"><span>Objective marks %</span><b id="sumPercent">—</b></div><div class="stat"><span>Total practice marks</span><b id="sumMarks">—</b></div><div class="stat"><span>Average auto-graded score</span><b id="sumAverage">—</b></div></div><p class="hint">Averages cover auto-gradable answered questions only. Open speaking and writing responses remain pending and are not silently scored as zero. These are not official PTE scores.</p><div id="reviewList" class="reviewList"></div><div class="controls"><button id="reviewAgain" class="btn">Review Questions</button><button id="newMock" class="btn primary">New Random Mock</button><button class="btn" onclick="location.href='mock-tests.html'">All Mock Tests & Results</button></div></section>
+<section id="summary" class="card summary"><div class="eyebrow">FINAL REVIEW</div><div class="taskTitle">Mock test complete</div><div class="summaryGrid"><div class="stat"><span>Questions</span><b id="sumQuestions">—</b></div><div class="stat"><span>Answered</span><b id="sumAnswered">—</b></div><div class="stat"><span>Objective accuracy</span><b id="sumAccuracy">—</b></div><div class="stat"><span>Time used</span><b id="sumTime">—</b></div><div class="stat"><span>Objective marks %</span><b id="sumPercent">—</b></div><div class="stat"><span>Total practice marks</span><b id="sumMarks">—</b></div><div class="stat"><span>Average auto-graded score</span><b id="sumAverage">—</b></div></div><p class="hint">Auto-graded averages only; ungraded responses remain pending.</p><div id="reviewList" class="reviewList"></div><div class="controls"><button id="reviewAgain" class="btn">Review Questions</button><button id="newMock" class="btn primary">New Random Mock</button><button class="btn" onclick="location.href='mock-tests.html'">All Mock Tests & Results</button></div></section>
 </main>
 
 <script>
@@ -265,7 +265,7 @@ function render(){
  $('sectionEyebrow').textContent=(q.section||'PRACTICE').toUpperCase();$('taskTitle').textContent=q.taskLabel||q.sourceTask||'Practice';$('taskMeta').textContent=instruction(q);$('sectionPill').textContent=q.section||'Practice';
  $('questionLabel').textContent=`QUESTION ${state.index+1} OF ${state.questions.length}${state.flags[state.index]?' • FLAGGED':''}`;$('jumpInput').max=state.questions.length;$('jumpInput').value=state.index+1;
  [...$('tabs').querySelectorAll('.tab')].forEach(b=>b.classList.toggle('active',b.dataset.section===(q.section||'Practice')));
- renderPrompt(q);$('hint').textContent=instruction(q);renderInteraction(q);renderSolution(q);
+ renderPrompt(q);renderInteraction(q);renderSolution(q);
  $('prevBtn').disabled=!state.reviewMode;$('nextBtn').textContent=state.index===state.questions.length-1?'Finish →':'Next →';$('flagBtn').textContent=state.flags[state.index]?'⚑ Unflag':'⚑ Flag';renderProgress();save();
 }
 function renderPrompt(q){
@@ -390,36 +390,52 @@ function updateLiveScore(){
  if($('liveAnswered'))$('liveAnswered').textContent=answered;
  if($('liveQuestionScore'))$('liveQuestionScore').textContent=isAnswered(state.answers[String(state.index)])?(qs.status==='needs-review'?'Pending evaluation':`${formatScore(qs.earned)} / ${formatScore(qs.possible)}`):'—';
  if($('liveScoreMode'))$('liveScoreMode').textContent=OBJECTIVE.has(q.sourceTask)?'Live':'Practice grading';
- if($('liveScoreText'))$('liveScoreText').textContent=isAnswered(state.answers[String(state.index)])?(OBJECTIVE.has(q.sourceTask)?(qs.exact?'Correct answer detected.':'Practice answer recorded. Check the solution in review.'):'Response recorded; open-response tasks require review.'):'Answer the task to calculate your practice score.';
+ if($('liveScoreText'))$('liveScoreText').textContent=isAnswered(state.answers[String(state.index)])?(OBJECTIVE.has(q.sourceTask)?(qs.exact?'Correct answer detected.':'Practice answer recorded. Check the solution in review.'):'Response recorded; open-response tasks require review.'):'Answer to see your score.';
  if($('liveQuestionBadge')){$('liveQuestionBadge').textContent=isAnswered(state.answers[String(state.index)])?(qs.status==='needs-review'?'Pending evaluation':`${formatScore(qs.earned)} / ${formatScore(qs.possible)}`):'—';$('liveQuestionBadge').className='scoreBadge '+(qs.status==='correct'?'scoreGood':qs.status==='incorrect'?'scoreBad':'scoreNeutral')}
 }
 
+// Display only learning material that actually exists for this question.
+// The practice question bank is the source of truth; never fabricate transcripts.
+function supportContent(q){
+ const value=(...keys)=>{for(const key of keys){const v=q[key];if(v!==undefined&&v!==null&&String(v).trim())return String(v).trim()}return ''};
+ const task=q.sourceTask||q.taskKey||'';
+ if(task==='readAloud')return {template:'',solution:'',transcript:'',resource:''};
+ const template=value('templateImageUrl','templateImage','templateUrl','templateimageurl');
+ const transcript=value('transcript','referenceTranscript','referencePracticeTranscript','practiceTranscript','audioTranscript','referenceText','discussionTranscript','lectureTranscript','questionTranscript');
+ // Repeat Sentence: the reference sentence can be stored as Answer or plain Text.
+ // Only use this fallback when there is no separate audio transcript.
+ const repeatText=task==='repeatSentence' ? value('answer','sentence','text','question','prompt') : '';
+ const solution=value('solution','solutionText','detailedSolution','explanation','modelAnswer','sampleAnswer','answer');
+ // For Repeat Sentence avoid repeating the same sentence in two panels.
+ return {
+   template:template,
+   solution:task==='repeatSentence'?'':solution,
+   transcript:transcript||repeatText,
+   resource:value('resourceUrl','resourceWebUrl','resourcePdfUrl','resourceYoutubeUrl','resourceImageUrl')
+ };
+}
 function renderSolution(q){
- const a=state.answers[String(state.index)];
- const liveTranscript=(a&&typeof a==='object'&&String(a.transcript||'').trim())?a.transcript:'';
+ const section=$('solution');
+ const data=supportContent(q);
+ const buttons=[];
+ const panels=[];
  const v=state.supportVisibility||{template:false,solution:false,transcript:false};
- const parts=[];
- parts.push(`<div class="solutionHead"><div><div class="eyebrow">QUESTION SUPPORT</div><h3>Solution & Learning</h3></div><span class="pill">Show / Hide</span></div>`);
- parts.push(`<div class="supportToggles">
-   <button class="supportToggle ${v.template?'active':''}" onclick="toggleSupport('template')">🖼️ Template Image</button>
-   <button class="supportToggle ${v.solution?'active':''}" onclick="toggleSupport('solution')">✅ Solution / Model Answer</button>
-   <button class="supportToggle ${v.transcript?'active':''}" onclick="toggleSupport('transcript')">📝 Transcript</button>
- </div>`);
- parts.push(`<div class="supportGrid">`);
- if(v.solution) parts.push(`<div class="supportItem supportSection"><b>Solution / Model answer</b><div class="supportText">${esc(q.solution||q.answer||'No model answer is provided for this question.')}</div></div>`);
- if(v.transcript) parts.push(`<div class="supportItem supportSection"><b>Reference / Practice transcript</b><div class="supportText">${esc(q.transcript||q.referenceTranscript||q.referenceText||'No reference transcript is provided for this question.')}</div></div>`);
- if(liveTranscript) parts.push(`<div class="supportItem supportSection"><b>Live transcribed text</b><div class="supportText">${esc(liveTranscript)}</div></div>`);
- parts.push(`</div>`);
- if(v.template){
-   if(q.templateImageUrl){
-     parts.push(`<div class="templateBlock supportSection"><b>Template image</b><img class="templatePreview" src="${esc(q.templateImageUrl)}" alt="Template image" onerror="this.style.display='none'"><div class="resourceRow"><a class="resource" target="_blank" rel="noopener" href="${esc(q.templateImageUrl)}">🖼️ Open Template Image</a></div></div>`);
-   } else {
-     parts.push(`<div class="templateBlock supportSection"><b>Template image</b><div class="supportText mutedSupport">No template image is available for this question.</div></div>`);
-   }
+ if(data.template){
+   buttons.push(`<button type="button" class="supportToggle ${v.template?'active':''}" onclick="toggleSupport('template')">🖼️ ${v.template?'Hide':'Show'} Template</button>`);
+   if(v.template) panels.push(`<div class="templateBlock"><img class="templatePreview" src="${esc(data.template)}" alt="Practice template" onerror="this.closest('.templateBlock').style.display='none'"><div class="resourceRow"><a class="resource" target="_blank" rel="noopener" href="${esc(data.template)}">Open image</a></div></div>`);
  }
- if(q.resourceUrl) parts.push(`<div class="resourceRow"><a class="resource" target="_blank" rel="noopener" href="${esc(q.resourceUrl)}">↗ Open Reference / Resource</a></div>`);
- $('solution').innerHTML=parts.join('');
- $('solution').classList.add('show');
+ if(data.solution){
+   buttons.push(`<button type="button" class="supportToggle ${v.solution?'active':''}" onclick="toggleSupport('solution')">✅ ${v.solution?'Hide':'Show'} Solution</button>`);
+   if(v.solution)panels.push(`<div class="supportItem"><b>Solution / Model Answer</b><div class="supportText">${esc(data.solution)}</div></div>`);
+ }
+ if(data.transcript){
+   buttons.push(`<button type="button" class="supportToggle ${v.transcript?'active':''}" onclick="toggleSupport('transcript')">📝 ${v.transcript?'Hide':'Show'} Transcript</button>`);
+   if(v.transcript)panels.push(`<div class="supportItem"><b>Reference Transcript</b><div class="supportText">${esc(data.transcript)}</div></div>`);
+ }
+ if(data.resource&&/^https?:\/\//i.test(data.resource))panels.push(`<div class="resourceRow"><a class="resource" target="_blank" rel="noopener" href="${esc(data.resource)}">Open resource</a></div>`);
+ if(!buttons.length&&!panels.length){section.innerHTML='';section.classList.remove('show');return;}
+ section.innerHTML=`${buttons.length?`<div class="supportToggles">${buttons.join('')}</div>`:''}${panels.length?`<div class="supportGrid">${panels.join('')}</div>`:''}`;
+ section.classList.add('show');
 }
 
 function toggleSupport(key){
@@ -524,20 +540,21 @@ function buildSummary(){
  $('reviewList').innerHTML=sectionSummary+taskSummary+state.questions.map((q,i)=>{
    const key='review_'+i;
    const v=state.reviewVisibility?.[i]||{template:false,solution:false,transcript:false};
-   const answer=(q.solution||q.answer)?`<div class="reviewSupport ${v.solution?'':'supportHidden'}"><b>Solution / Model answer:</b> ${esc(q.solution||q.answer)}</div>`:'';
-   const transcript=q.transcript?`<div class="reviewSupport ${v.transcript?'':'supportHidden'}"><b>Transcript:</b><div style="margin-top:7px;white-space:pre-wrap">${esc(q.transcript)}</div></div>`:'';
-   const template=q.templateImageUrl?`<div class="reviewSupport ${v.template?'':'supportHidden'}"><b>Template image:</b><br><img class="templatePreview" src="${esc(q.templateImageUrl)}" alt="Template image" onerror="this.style.display='none'"><div class="resourceRow"><a class="resource" target="_blank" rel="noopener" href="${esc(q.templateImageUrl)}">🖼️ Open Template Image</a></div></div>`:'';
+   const support=supportContent(q);
+   const answer=support.solution?`<div class="reviewSupport ${v.solution?'':'supportHidden'}"><b>Solution / Model answer:</b> ${esc(support.solution)}</div>`:'';
+   const transcript=support.transcript?`<div class="reviewSupport ${v.transcript?'':'supportHidden'}"><b>Transcript:</b><div style="margin-top:7px;white-space:pre-wrap">${esc(support.transcript)}</div></div>`:'';
+   const template=support.template?`<div class="reviewSupport ${v.template?'':'supportHidden'}"><b>Template image:</b><br><img class="templatePreview" src="${esc(support.template)}" alt="Template image" onerror="this.style.display='none'"></div>`:'';
    return `<article class="reviewItem">
      <div class="reviewHead"><span>Q${i+1} • ${esc(q.taskLabel||q.sourceTask)}</span><span>${state.flags[i]?'<span class="flagged">Flagged</span>':''}</span></div>
      <div class="meta">${esc(q.text||q.question||q.prompt||'Audio/Image task').slice(0,420)}</div>
      <div style="margin-top:8px"><b>Question percentage:</b> ${OBJECTIVE.has(q.sourceTask)?Math.round(100*scoreQuestion(q,i).earned/scoreQuestion(q,i).possible)+'%':'Pending qualified evaluation'}</div><div style="margin-top:8px"><b>Your response:</b> ${esc(responseText(q,i))}</div>
      <div class="reviewToggleRow">
-       ${q.templateImageUrl?`<button class="reviewToggle ${v.template?'active':''}" onclick="toggleReviewSupport(${i},'template')">🖼️ Template ${v.template?'Hide':'Show'}</button>`:''}
-       ${(q.solution||q.answer)?`<button class="reviewToggle ${v.solution?'active':''}" onclick="toggleReviewSupport(${i},'solution')">✅ Solution ${v.solution?'Hide':'Show'}</button>`:''}
-       ${q.transcript?`<button class="reviewToggle ${v.transcript?'active':''}" onclick="toggleReviewSupport(${i},'transcript')">📝 Transcript ${v.transcript?'Hide':'Show'}</button>`:''}
+       ${support.template?`<button class="reviewToggle ${v.template?'active':''}" onclick="toggleReviewSupport(${i},'template')">🖼️ ${v.template?'Hide':'Show'} Template</button>`:''}
+       ${support.solution?`<button class="reviewToggle ${v.solution?'active':''}" onclick="toggleReviewSupport(${i},'solution')">✅ ${v.solution?'Hide':'Show'} Solution</button>`:''}
+       ${support.transcript?`<button class="reviewToggle ${v.transcript?'active':''}" onclick="toggleReviewSupport(${i},'transcript')">📝 ${v.transcript?'Hide':'Show'} Transcript</button>`:''}
      </div>
      ${answer}${transcript}${template}
-     ${q.resourceUrl?`<div class="resourceRow"><a class="resource" target="_blank" rel="noopener" href="${esc(q.resourceUrl)}">↗ Open Resource</a></div>`:''}
+     ${support.resource&&/^https?:\/\//i.test(support.resource)?`<div class="resourceRow"><a class="resource" target="_blank" rel="noopener" href="${esc(support.resource)}">Open resource</a></div>`:''}
    </article>`;
  }).join('')
 }
