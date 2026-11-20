@@ -40,6 +40,26 @@ button,input,textarea,select{font:inherit}button{cursor:pointer}.top{height:86px
   .tabs {display:flex !important;flex-wrap:nowrap !important;grid-template-columns:none !important;overflow-x:auto !important;overflow-y:hidden !important;-webkit-overflow-scrolling:touch;scrollbar-width:thin;max-width:100%;}
   .tabs > .tab {flex:0 0 auto !important;min-width:max-content !important;white-space:nowrap !important;}
 }
+
+/* Match the Practice Reading task interactions inside the passage. */
+.mockBlankPassage{font-size:20px;line-height:2.05;white-space:pre-wrap;overflow-wrap:anywhere}
+.mockInlineSelect{display:inline-block;vertical-align:baseline;margin:0 4px;min-width:115px;max-width:min(280px,90vw);font-size:16px;font-weight:650;padding:8px 10px}
+.mockBlankSlot{display:inline-flex;vertical-align:baseline;align-items:center;justify-content:center;min-width:120px;min-height:40px;padding:5px 12px;margin:2px 5px;border:1.5px dashed #a99bdf;border-radius:10px;background:#fff;color:#5340a5;font-weight:750;font-size:16px}
+.mockBlankSlot.active{border-style:solid;background:#eeeaff;outline:2px solid #8168e0;outline-offset:1px}
+.mockBlankSlot.selected{border-style:solid}
+.mockBankLabel{font-size:13px;color:#64748b;font-weight:700;margin-bottom:10px}
+.mockWordBank{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:14px}
+.mockBankWord{padding:10px 15px;border:1px solid #c6bcef;border-radius:12px;background:#fff;color:#3f3493;font-weight:750}
+.mockBankWord:disabled{opacity:.38;cursor:not-allowed}
+
+/* Listening tasks: edit the transcript itself rather than answer below it. */
+.mockListeningPassage{font-size:20px;line-height:2.1;white-space:pre-wrap;overflow-wrap:anywhere;margin:0 0 18px}
+.mockListeningInput{display:inline-block;vertical-align:baseline;width:128px;max-width:42vw;padding:7px 9px;margin:0 3px;border:1px solid #a99be2;border-radius:9px;font:inherit;font-size:18px;background:#fff;color:#293852}
+.mockListeningInput:focus{outline:2px solid #7951e5;outline-offset:1px}
+.mockHighlightWords{font-size:20px;line-height:2.4;white-space:normal;overflow-wrap:anywhere}
+.mockHighlightWord{display:inline;padding:4px 3px;margin:0 1px;border:1px solid transparent;border-radius:5px;background:transparent;color:inherit;font:inherit;cursor:pointer;line-height:inherit}
+.mockHighlightWord:hover,.mockHighlightWord:focus-visible{border-color:#b4a2f9;background:#f2eeff}
+.mockHighlightWord.selected{background:#e8dcff;color:#4b25ae;border-color:#7951e5;font-weight:700}
 </style>
 <script src="whisper-config.js"></script>
 <script src="pte-mcq-scoring.js"></script>
@@ -99,6 +119,23 @@ const AUTO_NEXT_SHARED_TASKS=true;
 const AUDIO_BEFORE_RESPONSE=new Set(['repeatSentence','retellLecture','answerShortQuestion','summarizeGroupDiscussion','respondSituation','listeningMCQMultiple','listeningBlanks','highlightSummary','listeningMCQSingle','missingWord','incorrectWords','dictation']);
 let questionSeconds=0,prepSeconds=0,phase='ready',questionDeadline=0;
 let soundContext=null,studentHasInteracted=false;
+let situationSpeech=null;
+const AUDIO_ONLY_PROMPTS=new Set(['repeatSentence','answerShortQuestion','respondSituation']);
+function situationSpokenText(q){return String(q.text||q.question||q.prompt||q.transcript||'').trim();}
+function hasSituationSpeech(q){return q.sourceTask==='respondSituation'&&!q.audioUrl&&!!situationSpokenText(q)&&'speechSynthesis' in window;}
+function cancelSituationSpeech(){try{window.speechSynthesis?.cancel()}catch(e){} situationSpeech=null;}
+function finishPromptAudio(){if(phase!=='audio')return;phase=prepSeconds?'prepare':'answer';if(phase==='answer')beginTimedResponse();else refreshQuestionClock();}
+function playSituationSpeech(){
+ const q=state.questions[state.index]||{};const text=situationSpokenText(q);
+ if(!hasSituationSpeech(q)||!text)return;
+ cancelSituationSpeech();
+ const u=new SpeechSynthesisUtterance(text);u.lang='en-US';u.rate=.94;
+ situationSpeech=u;
+ u.onend=()=>{if(situationSpeech!==u)return;situationSpeech=null;finishPromptAudio()};
+ u.onerror=()=>{if(situationSpeech!==u)return;situationSpeech=null;finishPromptAudio()};
+ try{window.speechSynthesis.speak(u)}catch(e){finishPromptAudio()}
+}
+
 let cloudSessionId='', cloudTimer=null, cloudBusy=false, cloudDirty=false, cloudNoticeShown=false;
 function limits(q){
  const base=TASK_LIMITS[q.sourceTask]||[0,null];
@@ -121,20 +158,19 @@ function beginTimedResponse(){
  refreshQuestionClock();
 }
 function resetQuestionClock(){
+ cancelSituationSpeech();
  const q=state.questions[state.index]||{};const [prep,work]=limits(q);
  prepSeconds=prep;questionSeconds=work;questionDeadline=0;
- phase=(AUDIO_BEFORE_RESPONSE.has(q.sourceTask)&&q.audioUrl)?'audio':prep?'prepare':'answer';
+ phase=(AUDIO_BEFORE_RESPONSE.has(q.sourceTask)&&(q.audioUrl||hasSituationSpeech(q)))?'audio':prep?'prepare':'answer';
  if(phase==='answer')questionDeadline=work===null?0:Date.now()+work*1000;
  refreshQuestionClock();
  if(phase==='audio')attachAudioTiming();
 }
 function attachAudioTiming(){
- const audio=$('questionPrompt')?.querySelector('audio');if(!audio){phase='prepare';if(prepSeconds===0)beginTimedResponse();return;}
- audio.onended=()=>{
-  if(phase!=='audio')return;
-  phase=prepSeconds?'prepare':'answer';
-  if(phase==='answer')beginTimedResponse();else refreshQuestionClock();
- };
+ const q=state.questions[state.index]||{};
+ if(hasSituationSpeech(q)){playSituationSpeech();return;}
+ const audio=$('questionPrompt')?.querySelector('audio');if(!audio){phase=prepSeconds?'prepare':'answer';if(phase==='answer')beginTimedResponse();else refreshQuestionClock();return;}
+ audio.onended=finishPromptAudio;
  // User gesture is required for autoplay; a visible play button remains available.
  audio.play().catch(()=>{refreshQuestionClock();});
 }
@@ -142,7 +178,7 @@ function refreshQuestionClock(){
  const el=document.getElementById('questionClock');if(!el)return;
  const q=state.questions[state.index]||{};
  if(state.reviewMode){el.textContent='Review mode';return;}
- if(phase==='audio'){el.textContent='Listen to audio once — response starts after playback';return;}
+ if(phase==='audio'){el.textContent='Audio playing · response starts after playback';return;}
  if(phase==='prepare'){el.textContent='Preparation: '+Math.max(0,prepSeconds)+'s';return;}
  if(questionSeconds===null){const pace=PACE_SECONDS[q.sourceTask];el.textContent=pace?'Shared section timer · suggested pace '+Math.round(pace/30)/2+' min':'Shared section timer · no individual cutoff';return;}
  el.textContent='Attempt: '+Math.max(0,questionSeconds)+'s'+(PACE_SECONDS[q.sourceTask]?' · practice auto-next':'');
@@ -160,6 +196,7 @@ function examTick(){
  refreshQuestionClock();
 }
 function advanceAutomatically(){
+ cancelSituationSpeech();
  if(state.index>=state.questions.length-1){finishMock(true);return;}
  stopSpeakingTools();
  state.index++;state.supportVisibility={template:false,solution:false,transcript:false};
@@ -254,7 +291,7 @@ function buildSectionList(){
 const SPEAKING=new Set(['personalIntroduction','readAloud','repeatSentence','describeImage','retellLecture','answerShortQuestion','summarizeGroupDiscussion','respondSituation']);
 const LONG_TEXT=new Set(['summarizeWrittenText','essay','summarizeSpoken']);
 const MULTI=new Set(['readingMCQMultiple','listeningMCQMultiple']);
-const OBJECTIVE=new Set(['readingMCQMultiple','readingMCQSingle','highlightSummary','listeningMCQMultiple','listeningMCQSingle','missingWord','readingRWBlanks','readingBlanks','listeningBlanks','dictation','reorderParagraph']);
+const OBJECTIVE=new Set(['readingMCQMultiple','readingMCQSingle','highlightSummary','listeningMCQMultiple','listeningMCQSingle','missingWord','readingRWBlanks','readingBlanks','listeningBlanks','incorrectWords','dictation','reorderParagraph']);
 function instruction(q){
  const m={personalIntroduction:'Introduce yourself naturally using the microphone.',readAloud:'Read the text aloud clearly and naturally.',repeatSentence:'Listen carefully, then repeat the sentence using the microphone.',describeImage:'Study the image and describe the key information using the microphone.',retellLecture:'Listen to the lecture and retell the key points using the microphone.',answerShortQuestion:'Listen to the question and give a short spoken answer.',summarizeGroupDiscussion:'Listen and summarize the discussion using the microphone.',respondSituation:'Respond to the situation naturally using the microphone.',summarizeWrittenText:'Write a concise summary using the key ideas.',essay:'Write a well-organized essay answering the prompt.',readingRWBlanks:'Choose the best word for each blank.',readingMCQMultiple:'Select all answers that are correct.',reorderParagraph:'Put the sentences in the best logical order.',readingBlanks:'Complete the text using the best available words.',readingMCQSingle:'Select the best answer.',summarizeSpoken:'Listen and write a concise summary.',listeningMCQMultiple:'Listen and select all correct answers.',listeningBlanks:'Listen and complete the missing words.',highlightSummary:'Listen and choose the best summary.',listeningMCQSingle:'Listen and select the best answer.',missingWord:'Listen and choose the missing word.',incorrectWords:'Listen and identify the incorrect words.',dictation:'Listen and type exactly what you hear.'};return m[q.sourceTask]||'Complete the task and continue when ready.'
 }
@@ -265,17 +302,23 @@ function render(){
  $('sectionEyebrow').textContent=(q.section||'PRACTICE').toUpperCase();$('taskTitle').textContent=q.taskLabel||q.sourceTask||'Practice';$('taskMeta').textContent=instruction(q);$('sectionPill').textContent=q.section||'Practice';
  $('questionLabel').textContent=`QUESTION ${state.index+1} OF ${state.questions.length}${state.flags[state.index]?' • FLAGGED':''}`;$('jumpInput').max=state.questions.length;$('jumpInput').value=state.index+1;
  [...$('tabs').querySelectorAll('.tab')].forEach(b=>b.classList.toggle('active',b.dataset.section===(q.section||'Practice')));
- renderPrompt(q);renderInteraction(q);renderSolution(q);
+ window.mockActiveBlankIndex=0;renderPrompt(q);renderInteraction(q);renderSolution(q);
  $('prevBtn').disabled=!state.reviewMode;$('nextBtn').textContent=state.index===state.questions.length-1?'Finish →':'Next →';$('flagBtn').textContent=state.flags[state.index]?'⚑ Unflag':'⚑ Flag';renderProgress();save();
 }
 function renderPrompt(q){
  const text=q.text||q.question||q.prompt||'';
+ const audioOnly=AUDIO_ONLY_PROMPTS.has(q.sourceTask)&&!state.reviewMode;
  let html='';
  if(q.imageUrl)html+=`<img src="${esc(q.imageUrl)}" alt="Question image" onerror="this.style.display='none'">`;
- if(text)html+=`<div>${esc(text).replace(/\n/g,'<br>')}</div>`;
+ // The spoken sentence/question is a reference, not an on-screen exam prompt.
+ // Keep it accessible from Show Transcript in learning support.
+ if(text&&!audioOnly&&!['readingRWBlanks','readingBlanks','listeningBlanks','incorrectWords'].includes(q.sourceTask))html+=`<div>${esc(text).replace(/\n/g,'<br>')}</div>`;
  if(q.audioUrl)html+=`<div class="audioBox"><audio controls preload="metadata" src="${esc(q.audioUrl)}" onerror="this.closest('.audioBox').insertAdjacentHTML('beforeend','<div class=&quot;meta&quot;>Audio could not be loaded.</div>')"></audio></div>`;
+ else if(hasSituationSpeech(q))html+=`<div class="audioBox"><button type="button" class="btn secondary" id="playSituationAudio">▶ Play Situation Audio</button><div class="hint">Browser-generated audio · original recording unavailable</div></div>`;
+ else if(audioOnly)html+=`<div class="empty">Audio unavailable for this question. Check the Audio URL in the question bank.</div>`;
  if(!html)html='<div class="empty">Question content is unavailable for this item.</div>';
  $('questionPrompt').innerHTML=html;
+ if(hasSituationSpeech(q)&&!state.reviewMode){const b=$('playSituationAudio');if(b)b.onclick=()=>{if(phase==='audio'||!state.started)return;phase='audio';refreshQuestionClock();playSituationSpeech()};}
  if(state.started&&!state.reviewMode&&q.audioUrl&&!AUDIO_BEFORE_RESPONSE.has(q.sourceTask)) {
    const el=$('questionPrompt').querySelector('audio');
    if(el&&studentHasInteracted)el.play().catch(()=>{});
@@ -286,7 +329,9 @@ function renderInteraction(q){
  const key=String(state.index),a=state.answers[key],opts=optionsOf(q);
  if(SPEAKING.has(q.sourceTask)){renderSpeaking(q);return}
  if(q.sourceTask==='reorderParagraph'){renderReorder(q);return}
- if(['readingRWBlanks','readingBlanks','listeningBlanks'].includes(q.sourceTask) && opts.length){renderFillBlanks(q);return}
+ if(q.sourceTask==='listeningBlanks'){renderListeningBlanks(q);return}
+ if(q.sourceTask==='incorrectWords'){renderIncorrectWords(q);return}
+ if(['readingRWBlanks','readingBlanks'].includes(q.sourceTask) && opts.length){renderFillBlanks(q);return}
  if(opts.length){renderOptions(q,opts);return}
  const long=LONG_TEXT.has(q.sourceTask);
  $('answerArea').innerHTML=`<div class="answerBox">${long?`<textarea id="freeAnswer" placeholder="Write your response here...">${esc(a||'')}</textarea>`:`<input id="freeAnswer" placeholder="Type your answer here..." value="${esc(a||'')}">`}</div>`;
@@ -338,17 +383,100 @@ async function stopSpeaking(){
  if($('startSpeak'))$('startSpeak').disabled=false;if($('stopSpeak'))$('stopSpeak').disabled=true;if($('micStatus')&&!window.PTE_IS_MOBILE)$('micStatus').textContent='Stopped';
  const key=String(state.index);if(state.answers[key]&&typeof state.answers[key]==='object'){state.answers[key].attempted=true;save();renderProgress()}
 }
-function stopSpeakingTools(){try{stopSpeaking()}catch(e){}}
+function stopSpeakingTools(){cancelSituationSpeech();try{stopSpeaking()}catch(e){}}
 function renderOptions(q,opts){
  const key=String(state.index),a=state.answers[key],multi=MULTI.has(q.sourceTask),selected=multi?(Array.isArray(a)?a:[]):[a];
  $('answerArea').innerHTML=`<div class="options">${opts.map((o,i)=>`<label class="option"><input type="${multi?'checkbox':'radio'}" name="answer" value="${i}" ${selected.includes(i)?'checked':''}><span>${esc(o)}</span></label>`).join('')}</div>`;
  $('answerArea').querySelectorAll('input').forEach(inp=>inp.onchange=()=>{state.answers[key]=multi?[...$('answerArea').querySelectorAll('input:checked')].map(x=>+x.value):+$('answerArea').querySelector('input:checked').value;renderProgress();save()})
 }
+// Same blank markers and placement used by reading.html in Practice mode.
+const BLANK_TOKEN_RE=/(\[\[blank(?:\d+)?\]\]|\{\{blank(?:\d+)?\}\}|_{3,}|\[\s*\])/gi;
+function mockBlankGroups(q,count){
+ const flat=optionsOf(q),nested=Array.isArray(q.optionGroups)?q.optionGroups:null;
+ if(nested&&nested.length>=count)return nested.slice(0,count).map(g=>(Array.isArray(g)?g:String(g||'').split('|')).map(String).map(x=>x.trim()).filter(Boolean));
+ const joined=flat.join('|');
+ if(joined.includes(';')){const groups=joined.split(/\s*;\s*/).map(part=>part.split('|').map(x=>x.trim()).filter(Boolean));if(groups.length>=count)return groups.slice(0,count);}
+ if(count>1&&flat.length%count===0){const size=flat.length/count;if(size>=2&&size<=8)return Array.from({length:count},(_,i)=>flat.slice(i*size,(i+1)*size));}
+ return Array.from({length:count},()=>flat);
+}
 function renderFillBlanks(q){
- const key=String(state.index),opts=optionsOf(q),count=Math.max(1,(String(q.text||q.question||q.prompt||'').match(/_{2,}|\[\s*\]|\{\s*\}/g)||[]).length);
- let vals=Array.isArray(state.answers[key])?state.answers[key]:Array(count).fill('');
- $('answerArea').innerHTML=`<div class="answerBox"><div class="fillRow">${Array.from({length:count},(_,i)=>`<select class="fillSelect" data-i="${i}"><option value="">Select blank ${i+1}</option>${opts.map((o,j)=>`<option value="${j}" ${String(vals[i])===String(j)?'selected':''}>${esc(o)}</option>`).join('')}</select>`).join('')}</div></div>`;
- $('answerArea').querySelectorAll('.fillSelect').forEach(s=>s.onchange=()=>{vals[+s.dataset.i]=s.value;state.answers[key]=vals;renderProgress();save()})
+ const key=String(state.index),raw=String(q.text||q.question||q.prompt||'');
+ // Split option-group separators into individual choices for reliable scoring.
+ if(q.sourceTask==='readingRWBlanks' && Array.isArray(q.options) && q.options.some(v=>String(v).includes(';'))){
+   q.options=q.options.flatMap(v=>String(v).split(/\s*;\s*/)).map(v=>v.trim()).filter(Boolean);
+ }
+ const opts=optionsOf(q);
+ const count=(raw.match(BLANK_TOKEN_RE)||[]).length;
+ const prior=Array.isArray(state.answers[key])?state.answers[key]:[];
+ const vals=Array.from({length:count},(_,i)=>prior[i]===undefined?'':String(prior[i]));
+ const groups=mockBlankGroups(q,count),isDropdown=q.sourceTask==='readingRWBlanks';
+ let n=0;
+ const passage=esc(raw).replace(BLANK_TOKEN_RE,()=>{
+   const i=n++;
+   if(!isDropdown){const chosen=vals[i]!==''?opts[Number(vals[i])]||'':'';return `<button type="button" class="mockBlankSlot${chosen?' selected':''}" data-blank="${i}" aria-label="Choose word for blank ${i+1}">${esc(chosen||'Choose word')}</button>`;}
+   const group=groups[i]||opts;
+   const choices=group.map(word=>{const index=opts.indexOf(word);return index<0?'':`<option value="${index}" ${vals[i]===String(index)?'selected':''}>${esc(word)}</option>`}).join('');
+   return `<select class="fillSelect mockInlineSelect" data-i="${i}" aria-label="Blank ${i+1}"><option value="">Select</option>${choices}</select>`;
+ });
+ // When a question has missing options, never show a nonfunctional answer panel.
+ if(!count){$('questionPrompt').innerHTML=`<div>${esc(raw)}</div>`;$('answerArea').innerHTML='<div class="hint">This question has no recognised blank markers in its question text.</div>';return;}
+ $('questionPrompt').innerHTML=`<div class="mockBlankPassage">${passage}</div>`;
+ if(isDropdown){
+   $('answerArea').innerHTML='';
+   $('questionPrompt').querySelectorAll('.mockInlineSelect').forEach(select=>select.onchange=()=>{
+     vals[Number(select.dataset.i)]=select.value;state.answers[key]=vals;renderProgress();save();
+   });
+   return;
+ }
+ // Drag/drop-style word bank, with clickable word slots for keyboard and touch support.
+ const active=Number.isInteger(window.mockActiveBlankIndex)?window.mockActiveBlankIndex:0;
+ const used=new Set(vals.filter(Boolean));
+ $('answerArea').innerHTML=`<div class="answerBox"><div class="mockBankLabel">Choose a blank, then select a word</div><div class="mockWordBank">${opts.map((word,i)=>`<button type="button" class="mockBankWord" data-word="${i}" ${used.has(String(i))?'disabled':''}>${esc(word)}</button>`).join('')}</div><button type="button" class="btn" id="clearMockBlank">Clear selected blank</button></div>`;
+ const slots=[...$('questionPrompt').querySelectorAll('[data-blank]')];
+ function chooseBlank(i){window.mockActiveBlankIndex=i;slots.forEach((el,j)=>el.classList.toggle('active',j===i));}
+ slots.forEach(slot=>slot.onclick=()=>chooseBlank(Number(slot.dataset.blank)));
+ chooseBlank(Math.min(Math.max(0,active),count-1));
+ $('answerArea').querySelectorAll('[data-word]').forEach(button=>button.onclick=()=>{
+   const i=Number(window.mockActiveBlankIndex),optionIndex=button.dataset.word;
+   if(vals.some((v,j)=>j!==i&&v===optionIndex))return;
+   vals[i]=optionIndex;state.answers[key]=vals;renderProgress();save();renderFillBlanks(q);
+   window.mockActiveBlankIndex=Math.min(count-1,i+1);
+   const el=$('questionPrompt').querySelector(`[data-blank="${window.mockActiveBlankIndex}"]`);if(el)el.click();
+ });
+ $('clearMockBlank').onclick=()=>{vals[window.mockActiveBlankIndex]='';state.answers[key]=vals;renderProgress();save();renderFillBlanks(q)};
+}
+// Listening FIB uses typed blanks in the passage, not Reading's option bank.
+function renderListeningBlanks(q){
+ const key=String(state.index),raw=String(q.text||q.question||q.prompt||q.transcript||'');
+ const tokens=/\[\[blank(?:\d+)?\]\]|\{\{blank(?:\d+)?\}\}|_{3,}|\[\s*\]|\[[^\]]+\]/gi;
+ const saved=Array.isArray(state.answers[key])?state.answers[key]:[];
+ let i=0;
+ const passage=esc(raw).replace(tokens,()=>{const n=i++;return `<input class="mockListeningInput" data-listen-blank="${n}" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Missing word ${n+1}" placeholder="Type word" value="${esc(saved[n]||'')}">`});
+ $('questionPrompt').insertAdjacentHTML('afterbegin',`<div class="mockListeningPassage">${passage}</div>`);
+ $('answerArea').innerHTML='';
+ if(!i){$('answerArea').innerHTML='<div class="hint">No blank markers were found in this question. Check the question text in the sheet.</div>';return;}
+ $('questionPrompt').querySelectorAll('[data-listen-blank]').forEach(input=>input.oninput=()=>{state.answers[key]=[...$('questionPrompt').querySelectorAll('[data-listen-blank]')].map(x=>x.value);renderProgress();save()});
+}
+// HIW: select the actual words shown in the transcript; options are not MCQs.
+function mockHIWWords(q){return String(q.transcript||q.text||q.question||q.prompt||'').trim().split(/\s+/).filter(Boolean)}
+function mockHIWExpected(q){
+ const words=mockHIWWords(q),parts=String(q.answer||'').split('|').map(x=>x.trim()).filter(Boolean),used=new Set(),result=[];
+ for(const part of parts){const key=part.split('=')[0].trim();let ix=-1;
+   if(/^[#@]\d+$/.test(key))ix=Number(key.slice(1))-1;
+   else ix=words.findIndex((w,i)=>!used.has(i)&&norm(w)===norm(key));
+   if(ix>=0&&ix<words.length&&!used.has(ix)){used.add(ix);result.push(ix)}
+ }
+ return result;
+}
+function renderIncorrectWords(q){
+ const key=String(state.index),words=mockHIWWords(q),selected=Array.isArray(state.answers[key])?state.answers[key]:[];
+ $('questionPrompt').insertAdjacentHTML('afterbegin',`<div class="mockHighlightWords">${words.map((w,i)=>`<button type="button" class="mockHighlightWord${selected.includes(i)?' selected':''}" data-hiw="${i}" aria-pressed="${selected.includes(i)}">${esc(w)}</button>`).join(' ')}</div>`);
+ $('answerArea').innerHTML='';
+ $('questionPrompt').querySelectorAll('[data-hiw]').forEach(button=>button.onclick=()=>{
+   const i=Number(button.dataset.hiw),a=Array.isArray(state.answers[key])?state.answers[key].slice():[],pos=a.indexOf(i);
+   if(pos>=0)a.splice(pos,1);else a.push(i);
+   state.answers[key]=a.sort((x,y)=>x-y);button.classList.toggle('selected',pos<0);button.setAttribute('aria-pressed',String(pos<0));renderProgress();save();
+ });
 }
 function renderReorder(q){
  const key=String(state.index),opts=optionsOf(q),a=Array.isArray(state.answers[key])?state.answers[key]:(opts.length?opts.slice():String(q.answer||'').split(/\s*\|\s*/).filter(Boolean));
@@ -365,6 +493,19 @@ function scoreQuestion(q,i){
  const marks=marksOf(q),a=state.answers[String(i)];
  if(!isAnswered(a))return {earned:0,possible:marks,status:'unanswered',exact:false};
  const task=String(q.sourceTask||'');
+ if(task==='incorrectWords'){
+   const expected=mockHIWExpected(q);
+   if(!expected.length)return {earned:0,possible:marks,status:'needs-review',exact:false,detail:'No matching HIW answer words found'};
+   const selected=Array.isArray(a)?a:[],hit=selected.filter(x=>expected.includes(Number(x))).length,wrong=selected.filter(x=>!expected.includes(Number(x))).length;
+   const fraction=Math.max(0,hit-wrong)/expected.length,exact=hit===expected.length&&!wrong;
+   return {earned:Math.round(marks*fraction*10)/10,possible:marks,status:exact?'correct':'partial',exact,detail:'Highlighted words: correct minus incorrect'};
+ }
+ if(task==='listeningBlanks' && Array.isArray(a)){
+   const expected=String(q.answer||'').split('|').map(x=>x.trim()).filter(Boolean);
+   if(!expected.length)return {earned:0,possible:marks,status:'needs-review',exact:false,detail:'Missing listening blank answer key'};
+   const hit=expected.reduce((n,x,i)=>n+(norm(x)===norm(a[i])?1:0),0),exact=hit===expected.length;
+   return {earned:Math.round(marks*hit/expected.length*10)/10,possible:marks,status:exact?'correct':'partial',exact,detail:`${hit} / ${expected.length} correctly spelled words`};
+ }
  if(OBJECTIVE.has(task) && window.PTETaskScoring){
    const graded=MULTI.has(task)?window.PTEMultiChoice.grade(q,Array.isArray(a)?a:[a]):PTETaskScoring.grade(q,a);
    if(graded.supported){const fraction=graded.possible?graded.earned/graded.possible:0;
@@ -404,7 +545,7 @@ function supportContent(q){
  const transcript=value('transcript','referenceTranscript','referencePracticeTranscript','practiceTranscript','audioTranscript','referenceText','discussionTranscript','lectureTranscript','questionTranscript');
  // Repeat Sentence: the reference sentence can be stored as Answer or plain Text.
  // Only use this fallback when there is no separate audio transcript.
- const repeatText=task==='repeatSentence' ? value('answer','sentence','text','question','prompt') : '';
+ const repeatText=['repeatSentence','answerShortQuestion','respondSituation'].includes(task) ? value('sentence','text','question','prompt','answer') : '';
  const solution=value('solution','solutionText','detailedSolution','explanation','modelAnswer','sampleAnswer','answer');
  // For Repeat Sentence avoid repeating the same sentence in two panels.
  return {
@@ -507,11 +648,13 @@ function finishMock(force){if(state.finished)return;if(!force&&!confirm('Finish 
 function expectedCorrect(q,i){
  const a=state.answers[String(i)];if(!isAnswered(a)||!q.answer||!OBJECTIVE.has(q.sourceTask))return null;const ans=String(q.answer),opts=optionsOf(q);
  if(q.sourceTask==='reorderParagraph')return norm((Array.isArray(a)?a.join(' | '):a))===norm(ans);
- if(['readingRWBlanks','readingBlanks','listeningBlanks'].includes(q.sourceTask)){const chosen=(Array.isArray(a)?a:[]).map(x=>opts[+x]||'').join(' | ');return norm(chosen)===norm(ans)}
+ if(q.sourceTask==='listeningBlanks')return norm((Array.isArray(a)?a:[]).join(' | '))===norm(ans);
+ if(q.sourceTask==='incorrectWords'){const exp=mockHIWExpected(q),got=Array.isArray(a)?a:[];return exp.length>0&&exp.length===got.length&&exp.every(x=>got.includes(x));}
+ if(['readingRWBlanks','readingBlanks'].includes(q.sourceTask)){const chosen=(Array.isArray(a)?a:[]).map(x=>opts[+x]||'').join(' | ');return norm(chosen)===norm(ans)}
  if(opts.length){const expected=ans.split(/\s*\|\s*|\s*,\s*/).map(norm).filter(Boolean);const chosen=(Array.isArray(a)?a:[a]).map(i=>norm(opts[i])).filter(Boolean);return expected.length===chosen.length&&expected.every(x=>chosen.includes(x))}
  return norm(a)===norm(ans)
 }
-function responseText(q,i){const a=state.answers[String(i)];if(!isAnswered(a))return'Not answered';if(a&&typeof a==='object')return a.transcript||'Spoken attempt recorded';if(Array.isArray(a)){if(['readingRWBlanks','readingBlanks','listeningBlanks'].includes(q.sourceTask))return a.map(x=>optionsOf(q)[+x]||'').filter(Boolean).join(' | ');return a.map(x=>optionsOf(q)[+x]||x).join(' | ')}return String(a)}
+function responseText(q,i){const a=state.answers[String(i)];if(!isAnswered(a))return'Not answered';if(a&&!Array.isArray(a)&&typeof a==='object')return a.transcript||'Spoken attempt recorded';if(Array.isArray(a)){if(q.sourceTask==='listeningBlanks')return a.join(' | ');if(q.sourceTask==='incorrectWords')return a.map(x=>mockHIWWords(q)[x]||'').join(' | ');if(['readingRWBlanks','readingBlanks'].includes(q.sourceTask))return a.map(x=>optionsOf(q)[+x]||'').filter(Boolean).join(' | ');return a.map(x=>optionsOf(q)[+x]||x).join(' | ')}return String(a)}
 function buildSummary(){
  const total=state.questions.length,answered=countAnswered(),objective=state.questions.map(expectedCorrect).filter(x=>x!==null),correct=objective.filter(Boolean).length,live=scoreIndices(state.questions.map((_,i)=>i));
  $('sumQuestions').textContent=total;
